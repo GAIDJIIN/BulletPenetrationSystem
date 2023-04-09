@@ -1,7 +1,6 @@
 // Bullet Penetration System. All rights reserved
 
 #include "BulletPenetrationComponent.h"
-
 #include "ImpactSurfaceInfo.h"
 #include "PenetrationPhysMaterial.h"
 #include "Components/DecalComponent.h"

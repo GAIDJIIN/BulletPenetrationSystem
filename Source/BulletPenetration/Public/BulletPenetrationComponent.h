@@ -24,7 +24,7 @@ enum class EBulletTraceType : uint8
 	Sphere,
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class BULLETPENETRATION_API UBulletPenetrationComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -61,12 +61,12 @@ private:
 
 	// Bullet trace type
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Trace Channel",meta=(ToolTip = "Bullet Trace Type (Line,Box,Sphere,Capsule)", AllowPrivateAccess))
-		TEnumAsByte<EBulletTraceType> BulletTraceType = EBulletTraceType::Line; // Bullet Trace Type (Line,Box,Sphere,Capsule)
-	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Trace Channel",meta=(ClampMin="0.0",ToolTip = "Sphere or Capsule radius", AllowPrivateAccess, EditCondition = "BulletTraceType::Sphere", EditConditionHides))
+		EBulletTraceType BulletTraceType = EBulletTraceType::Line; // Bullet Trace Type (Line,Box,Sphere,Capsule)
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Trace Channel",meta=(ClampMin="0.0",ToolTip = "Sphere or Capsule radius", AllowPrivateAccess, EditCondition = "BulletTraceType == EBulletTraceType::Sphere", EditConditionHides))
 		float BulletRadius = 0.0f;
 	
 	// Penetration Info
-	UPROPERTY(EditAnywhere,Category="Impact Info",meta=(ToolTip = "Impact Info"))
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Impact Info",meta=(ToolTip = "Impact Info"))
 		TObjectPtr<UImpactSurfaceInfo> ImpactInfo;
 	
 	// Collision Channels Info
@@ -76,13 +76,13 @@ private:
 		TEnumAsByte<ECollisionChannel> PenetrationShootChannel = ECC_Visibility; // Penetration Shoot Channel
 
 	// Debug
-	UPROPERTY(EditAnywhere,Category="Debug",meta=(ToolTip = "Show bullet current info", AllowPrivateAccess))
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Debug",meta=(ToolTip = "Show bullet current info", AllowPrivateAccess))
 		bool bShowBulletInfo = false; // Show bullet current info
-	UPROPERTY(EditAnywhere,Category="Debug",meta=(ToolTip = "Time to show", AllowPrivateAccess, EditCondition = "bShowBulletInfo"))
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Debug",meta=(ToolTip = "Time to show", AllowPrivateAccess, EditCondition = "bShowBulletInfo"))
 		float ShowBulletInfoTime = 5.0f;
-	UPROPERTY(EditAnywhere,Category="Debug",meta=(ToolTip = "Show debug traces", AllowPrivateAccess)) 
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Debug",meta=(ToolTip = "Show debug traces", AllowPrivateAccess)) 
 		bool bShowVisualDebug = false; // Show debug traces
-	UPROPERTY(EditAnywhere,Category="Debug",meta=(ToolTip = "Time to show", AllowPrivateAccess, EditCondition = "bShowVisualDebug"))
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Debug",meta=(ToolTip = "Time to show", AllowPrivateAccess, EditCondition = "bShowVisualDebug"))
 		float ShowVisualDebugTime = 5.0f;
 	
 	// C++
