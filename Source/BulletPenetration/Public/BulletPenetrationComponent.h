@@ -7,15 +7,21 @@
 #include "BulletPenetrationComponent.generated.h"
 
 class UImpactSurfaceInfo;
+class UNiagaraSystem;
 
 // Use struct instead of object
-USTRUCT(BlueprintType)
 struct FCurrentBulletInfo
 {
-	GENERATED_USTRUCT_BODY()
-		float BulletPenetration = 0.0f;
-		float BulletDistance = 0.0f;
-		float BulletDamage = 0.0f;
+	float BulletPenetration = 0.0f;
+	float BulletDistance = 0.0f;
+	float BulletDamage = 0.0f;
+};
+
+UENUM(BlueprintType)
+enum class EBulletTraceType : uint8
+{
+	Line,
+	Sphere,
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -28,7 +34,7 @@ public:
 	// Blueprint
 	// Function
 	UFUNCTION(BlueprintCallable)
-		void Shoot(const FVector ShootLocation, const FVector ShootDirection, TArray<AActor*> IgnoreActors); // Main function shoot
+		void Shoot(const FVector ShootLocation, const FVector ShootDirection, TArray<AActor*> IgnoreActors, AController* DamageInstigator); // Main function shoot
 protected:
 	virtual void BeginPlay() override;
 
@@ -48,8 +54,16 @@ private:
 		float BulletDamage = 10.0f; // Bullet damage
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Damage Info",meta=(ClampMin="0.0", ToolTip = "Max extremum distance damage", AllowPrivateAccess))
 		float DamageFalloffDistance = 2500.0f; // Max extremum distance damage
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Damage Info",meta=(ClampMin="0.0", ToolTip = "Max extremum distance damage", AllowPrivateAccess))
+		float ImpulseStrengthMultiplayer = 40.0f;
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Damage Info",meta=(ToolTip = "Damage type class", AllowPrivateAccess))
-		TObjectPtr<UDamageType> DamageTypeClass = nullptr; // Damage type class
+		TSubclassOf<UDamageType> DamageTypeClass = nullptr; // Damage type class
+
+	// Bullet trace type
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Trace Channel",meta=(ToolTip = "Bullet Trace Type (Line,Box,Sphere,Capsule)", AllowPrivateAccess))
+		TEnumAsByte<EBulletTraceType> BulletTraceType = EBulletTraceType::Line; // Bullet Trace Type (Line,Box,Sphere,Capsule)
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Trace Channel",meta=(ClampMin="0.0",ToolTip = "Sphere or Capsule radius", AllowPrivateAccess, EditCondition = "BulletTraceType::Sphere", EditConditionHides))
+		float BulletRadius = 0.0f;
 	
 	// Penetration Info
 	UPROPERTY(EditAnywhere,Category="Impact Info",meta=(ToolTip = "Impact Info"))
@@ -75,14 +89,23 @@ private:
 	// Variables
 	
 	// Function
-	void ShowDebug(float DebugTime);
-
+	// Debug
+	FString GetDebugInfo(FCurrentBulletInfo& BulletInfo) const;
+	
 	// Penetration Logic
-	void BulletTrace(const FVector ShootLocation, const FVector ShootVector, FCurrentBulletInfo& NewBulletInfo, TArray<AActor*> IgnoreActors); // Do Bullet Trace
-	void HitLogic(const FHitResult& HitResult, FCurrentBulletInfo& NewBulletInfo); // Core Hit Logic
+	bool BulletTrace(const FVector ShootLocation, const FVector ShootVector, FHitResult& OutHit, TArray<AActor*> IgnoreActors) const; // Do Bullet Trace
+	bool PenetrationTrace(const FVector Direction, const FVector EnterLocation, AActor* HitActor, FVector& PenetrationLocation) const; // Do Penetration Trace
+	void HitLogic(const FVector ShootLocation, const FVector ShootVector, FCurrentBulletInfo& NewBulletInfo, TArray<AActor*> IgnoreActors, AController* DamageInstigator); // Core Hit Logic
 
 	// Service Logic
 	float CalculateDamage(FCurrentBulletInfo& BulletInfo) const; // Calculate Damage by Penetration and Distance
 	float CalculatePenetrationByDistance(FCurrentBulletInfo& BulletInfo) const; // Calculate Penetration by Distance
 	float CalculatePenetrationBySurface(FCurrentBulletInfo& BulletInfo,const TWeakObjectPtr<UPhysicalMaterial> PhysMaterial) const; // Calculate Penetration by Surface
+	void MakeImpulseAtImpactLocation(const FHitResult HitResult, const float ImpulseStrength) const; // Impulse Strength = BulletDamage * ImpulseStrengthMultiplayer
+
+	// VFX
+	void SpawnVFX(const FHitResult HitResult, const bool LastHit) const;
+	void SpawnDecal(const FHitResult HitResult, UMaterialInterface* ImpactDecal) const;
+	void SpawnNiagara(const FHitResult HitResult, UNiagaraSystem* ImpactNiagara) const;
+	void SpawnSound(const FHitResult HitResult, USoundBase* ImpactSound) const;
 };

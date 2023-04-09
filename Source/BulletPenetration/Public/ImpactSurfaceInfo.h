@@ -18,6 +18,12 @@ struct FImpactVFX
 		TObjectPtr<UMaterialInterface> ImpactLastDecal;
 	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
 		TObjectPtr<UNiagaraSystem> ImpactNiagara;
+	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
+		TObjectPtr<UNiagaraSystem> ImpactLastNiagara;
+	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
+		TObjectPtr<USoundBase> ImpactSound;
+	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
+		TObjectPtr<USoundBase> ImpactLastSound;
 };
 
 UCLASS()
