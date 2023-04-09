@@ -122,7 +122,7 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 			DamageInstigator
 			); // New bullet shoot distance = StartDistance - ShootDistance
 	}
-	MakeImpulseAtImpactLocation(HitResult,NewBulletInfo.BulletDamage*ImpulseStrengthMultiplayer); // Make Impulse after detect new penetration location
+	MakeImpulseAtImpactLocation(HitResult,NewBulletInfo.BulletDamage*ImpulseStrengthMultiplier); // Make Impulse after detect new penetration location
 }
 
 // Service Logic
@@ -132,7 +132,7 @@ float UBulletPenetrationComponent::CalculateDamage(FCurrentBulletInfo& BulletInf
 	const float LocalDamageByPenetration = UKismetMathLibrary::MapRangeClamped(LocalPenetration,
 		0.0f,
 		BulletPenetration,
-		RatioPenetration,
+		DamageDecreaseMultiplier,
 		1.0f);
 	const float LocalDamageByDistance = UKismetMathLibrary::MapRangeClamped(BulletInfo.BulletDistance,
 		150.0f, // MinDistance To Start Calculate

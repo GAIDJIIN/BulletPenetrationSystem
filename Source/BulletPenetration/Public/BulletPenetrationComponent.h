@@ -46,16 +46,16 @@ private:
 		float BulletPenetration = 1.0f; // Bullet penetration force
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Penetration Info",meta=(ClampMin="0.0", ToolTip = "Max extremum distance penetration", AllowPrivateAccess))
 		float PenetrationFalloffDistance = 2500.0f; // Max extremum distance penetration		
-	UPROPERTY(EditAnywhere,Category="Bullet Info|Penetration Info",meta=(ClampMin="0.0", ClampMax="1.0",ToolTip = "Bullet penetration decrease by distance parameter", AllowPrivateAccess))
-		float RatioPenetration = 0.5f; // Bullet penetration decrease by distance parameter
-	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Info",meta=(ClampMin="0.0", ToolTip = "Bullet shoot distance", AllowPrivateAccess))
-		float ShootDistance = 10000.0f; // Bullet shoot distance
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Damage Info",meta=(ClampMin="0.0", ToolTip = "Bullet damage", AllowPrivateAccess))
 		float BulletDamage = 10.0f; // Bullet damage
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Damage Info",meta=(ClampMin="0.0", ToolTip = "Max extremum distance damage", AllowPrivateAccess))
 		float DamageFalloffDistance = 2500.0f; // Max extremum distance damage
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Penetration Info",meta=(ClampMin="0.0", ClampMax="1.0",ToolTip = "Bullet damage decrease multiplier by penetration", AllowPrivateAccess))
+		float DamageDecreaseMultiplier = 0.5f; // Bullet damage decrease multiplier by penetration
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Info",meta=(ClampMin="0.0", ToolTip = "Bullet shoot distance", AllowPrivateAccess))
+		float ShootDistance = 10000.0f; // Bullet shoot distance
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Damage Info",meta=(ClampMin="0.0", ToolTip = "Max extremum distance damage", AllowPrivateAccess))
-		float ImpulseStrengthMultiplayer = 40.0f;
+		float ImpulseStrengthMultiplier = 40.0f;
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Damage Info",meta=(ToolTip = "Damage type class", AllowPrivateAccess))
 		TSubclassOf<UDamageType> DamageTypeClass = nullptr; // Damage type class
 
@@ -101,7 +101,7 @@ private:
 	float CalculateDamage(FCurrentBulletInfo& BulletInfo) const; // Calculate Damage by Penetration and Distance
 	float CalculatePenetrationByDistance(FCurrentBulletInfo& BulletInfo) const; // Calculate Penetration by Distance
 	float CalculatePenetrationBySurface(FCurrentBulletInfo& BulletInfo,const TWeakObjectPtr<UPhysicalMaterial> PhysMaterial) const; // Calculate Penetration by Surface
-	void MakeImpulseAtImpactLocation(const FHitResult HitResult, const float ImpulseStrength) const; // Impulse Strength = BulletDamage * ImpulseStrengthMultiplayer
+	void MakeImpulseAtImpactLocation(const FHitResult HitResult, const float ImpulseStrength) const; // Impulse Strength = BulletDamage * ImpulseStrengthMultiplier
 
 	// VFX
 	void SpawnVFX(const FHitResult HitResult, const bool LastHit) const;
