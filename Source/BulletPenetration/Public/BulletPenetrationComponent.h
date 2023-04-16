@@ -33,7 +33,7 @@ public:
 	UBulletPenetrationComponent();
 	// Blueprint
 	// Function
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,Category="Bullet Logic|Main function")
 		void Shoot(const FVector ShootLocation, const FVector ShootDirection, TArray<AActor*> IgnoreActors, AController* DamageInstigator); // Main function shoot
 protected:
 	virtual void BeginPlay() override;
@@ -90,11 +90,22 @@ private:
 	
 	// Function
 	// Debug
-	FString GetDebugInfo(FCurrentBulletInfo& BulletInfo) const;
+	/*
+	Red Hit Sphere - last hit location
+	Green Hit Sphere - hit location
+	Yellow Hit Sphere - start penetrate location
+	Red Bullet Trace - Bullet Trace
+	Green Bullet Trace - Bullet Hit
+	Blue Bullet Trace - Penetration Trace
+	Yellow Bullet Trace - Penetration Hit
+	*/
+	void ShowDebugHitSphere(const FVector SpawnLocation, const FLinearColor SphereColor) const;
+	// Show bullet info after hit
+	void ShowDebugBulletInfo(const FCurrentBulletInfo BulletInfo) const;
 	
 	// Penetration Logic
 	bool BulletTrace(const FVector ShootLocation, const FVector ShootVector, FHitResult& OutHit, TArray<AActor*> IgnoreActors) const; // Do Bullet Trace
-	bool PenetrationTrace(const FVector Direction, const FVector EnterLocation, AActor* HitActor, FVector& PenetrationLocation) const; // Do Penetration Trace
+	bool PenetrationTrace(const FVector Direction, const FVector EnterLocation, AActor* HitActor, TArray<AActor*> IgnoreActors, FVector& PenetrationLocation) const; // Do Penetration Trace
 	void HitLogic(const FVector ShootLocation, const FVector ShootVector, FCurrentBulletInfo& NewBulletInfo, TArray<AActor*> IgnoreActors, AController* DamageInstigator); // Core Hit Logic
 
 	// Service Logic
@@ -102,6 +113,7 @@ private:
 	float CalculatePenetrationByDistance(FCurrentBulletInfo& BulletInfo) const; // Calculate Penetration by Distance
 	float CalculatePenetrationBySurface(FCurrentBulletInfo& BulletInfo,const TWeakObjectPtr<UPhysicalMaterial> PhysMaterial) const; // Calculate Penetration by Surface
 	void MakeImpulseAtImpactLocation(const FHitResult HitResult, const float ImpulseStrength) const; // Impulse Strength = BulletDamage * ImpulseStrengthMultiplier
+	bool IsCanPenetraceDistance(const float PenetrateDistance, const TWeakObjectPtr<UPhysicalMaterial> PhysMaterial) const; // Check can penetrate distance
 
 	// VFX
 	void SpawnVFX(const FHitResult HitResult, const bool LastHit) const;

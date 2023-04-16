@@ -80,10 +80,77 @@ bool UBulletPenetrationComponent::BulletTrace(const FVector ShootLocation, const
 }
 
 bool UBulletPenetrationComponent::PenetrationTrace(const FVector Direction, const FVector EnterLocation,
-	AActor* HitActor, FVector& PenetrationLocation) const
+	AActor* HitActor, TArray<AActor*> IgnoreActors, FVector& PenetrationLocation) const
 {
+	PenetrationLocation = FVector::Zero();
+	if(!HitActor) return false;
+	// Find largest hit actor side
+	FVector Origin;
+	FVector ActorBoxExtent;
+	HitActor->GetActorBounds(true,Origin,ActorBoxExtent,true); // Get Actor Bounds
+	float LargestActorSide; // Length largest side
+	int32 LocalInt;
+	const TArray<float> MaxSideArray = {static_cast<float>(ActorBoxExtent.X),static_cast<float>(ActorBoxExtent.Y),static_cast<float>(ActorBoxExtent.Z)}; 
+	UKismetMathLibrary::MaxOfFloatArray(MaxSideArray,LocalInt,LargestActorSide);
+	const FVector Start = EnterLocation + LargestActorSide * 2.05f * Direction;
+	const FVector End = EnterLocation;
+	TArray<FHitResult> OutHits;
+	// Do Penetration Test Trace
+	switch(BulletTraceType)
+	{
+	case EBulletTraceType::Line:
+		UKismetSystemLibrary::LineTraceMulti(
+			GetWorld(),
+			Start,
+			End,
+			UEngineTypes::ConvertToTraceType(BulletShootChannel),
+			true,
+			IgnoreActors,
+			bShowVisualDebug ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None,
+			OutHits,
+			true,
+			FLinearColor::Blue,
+			FLinearColor::Yellow,
+			ShowVisualDebugTime);
+		break;
+	case EBulletTraceType::Sphere:
+		UKismetSystemLibrary::SphereTraceMulti(
+			GetWorld(),
+			Start,
+			End,
+			BulletRadius,
+			UEngineTypes::ConvertToTraceType(BulletShootChannel),
+			true,
+			IgnoreActors,
+			bShowVisualDebug ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None,
+			OutHits,
+			true,
+			FLinearColor::Blue,
+			FLinearColor::Yellow,
+			ShowVisualDebugTime);
+		break;
+	default:
+		UE_LOG(LogTemp, Warning, TEXT("Bullet trace is invalid!!!"));
+		return false;
+	}
+	if(OutHits.IsEmpty()) return false;
+	for(int i = OutHits.Num()-1; i<0;--i)
+	{
+		const FHitResult LocalHit = OutHits[i];
+		if(LocalHit.GetActor() != HitActor) continue;
+		const float PenetrationDistance = UKismetMathLibrary::Vector_Distance(LocalHit.ImpactPoint,EnterLocation); // Get Penetration Distance
+		if(!IsCanPenetraceDistance(PenetrationDistance,LocalHit.PhysMaterial)) return false;
+		auto LocalImpactInfo = ImpactInfo->ImpactInfo[UGameplayStatics::GetSurfaceType(LocalHit)]; // Get ImpactInfo
+		SpawnDecal(LocalHit,LocalImpactInfo.ImpactDecal);
+		/*
+		Penetrate location move on 4 units from start to stop hit bags
+		If Bullet trace == Sphere - add move on Radius + 4 units
+		*/
+		PenetrationLocation = LocalHit.ImpactPoint + LocalHit.ImpactNormal*4.0f +
+		(BulletTraceType == EBulletTraceType::Sphere ? 0.0f : BulletRadius);
+		return true;
+	}
 	return false;
-	// ZAGLUSHKA
 }
 
 void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FVector ShootVector, FCurrentBulletInfo& NewBulletInfo, TArray<AActor*> IgnoreActors, AController* DamageInstigator)
@@ -95,6 +162,7 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 	NewBulletInfo.BulletDamage = CalculateDamage(NewBulletInfo); // Calculate Damage
 	NewBulletInfo.BulletPenetration = CalculatePenetrationByDistance(NewBulletInfo) -
 		CalculatePenetrationBySurface(NewBulletInfo, HitResult.PhysMaterial); // Calculate Penetration
+	ShowDebugBulletInfo(NewBulletInfo);
 	const FVector ShootDirection = UKismetMathLibrary::FindLookAtRotation(HitResult.TraceStart,HitResult.TraceEnd).Vector();
 	UGameplayStatics::ApplyPointDamage(HitResult.GetActor(),
 		NewBulletInfo.BulletDamage,
@@ -111,6 +179,7 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 			ShootDirection,
 			HitResult.ImpactPoint,
 			HitResult.GetActor(),
+			IgnoreActors,
 			PenetrationSpawnLocation);
 		const float NewShootDistance = ShootDistance-NewBulletInfo.BulletDistance;
 		if(!(NewShootDistance>0.0f && Success)) return;
@@ -121,7 +190,9 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 			IgnoreActors,
 			DamageInstigator
 			); // New bullet shoot distance = StartDistance - ShootDistance
+		ShowDebugHitSphere(HitResult.ImpactPoint, FLinearColor::Green); // Debug when hit
 	}
+	else ShowDebugHitSphere(HitResult.ImpactPoint, FLinearColor::Red); // Debug when last hit
 	MakeImpulseAtImpactLocation(HitResult,NewBulletInfo.BulletDamage*ImpulseStrengthMultiplier); // Make Impulse after detect new penetration location
 }
 
@@ -168,6 +239,13 @@ void UBulletPenetrationComponent::MakeImpulseAtImpactLocation(const FHitResult H
 	if(!(HitResult.bBlockingHit && HitResult.GetComponent() && HitResult.GetComponent()->IsSimulatingPhysics())) return;
 	const FVector Impulse = UKismetMathLibrary::FindLookAtRotation(HitResult.TraceStart,HitResult.TraceEnd).Vector() * ImpulseStrength;
 	HitResult.GetComponent()->AddImpulseAtLocation(Impulse,HitResult.ImpactPoint,HitResult.BoneName);
+}
+
+bool UBulletPenetrationComponent::IsCanPenetraceDistance(const float PenetrateDistance, const TWeakObjectPtr<UPhysicalMaterial> PhysMaterial) const
+{
+	auto LocalPhysMaterial = Cast<UPenetrationPhysMaterial>(PhysMaterial);
+	if(!LocalPhysMaterial) return false;
+	return PenetrateDistance <= LocalPhysMaterial->PenetrationInfo.MaxPenetrationDistance;
 }
 
 // VFX
@@ -226,10 +304,31 @@ void UBulletPenetrationComponent::SpawnSound(const FHitResult HitResult, USoundB
 }
 
 // Debug
-FString UBulletPenetrationComponent::GetDebugInfo(FCurrentBulletInfo& BulletInfo) const
+void UBulletPenetrationComponent::ShowDebugHitSphere(const FVector SpawnLocation, const FLinearColor SphereColor = FLinearColor::Green) const
 {
-	// text and traces
-	return FString("Distance: " + FString::SanitizeFloat(BulletInfo.BulletDistance) + '\n'
+	if(!GetWorld() || !bShowVisualDebug) return;
+	UKismetSystemLibrary::DrawDebugSphere(
+		GetWorld(),
+		SpawnLocation,
+		20,
+		12,
+		SphereColor,
+		ShowVisualDebugTime
+		);
+}
+
+void UBulletPenetrationComponent::ShowDebugBulletInfo(const FCurrentBulletInfo BulletInfo) const
+{
+	if(!GetWorld() || !bShowBulletInfo) return;
+	UKismetSystemLibrary::PrintString(
+		GetWorld(),
+		FString("---------------------------------------\nDistance: " + FString::SanitizeFloat(BulletInfo.BulletDistance) + '\n'
 		+ "Penetration: " + FString::SanitizeFloat(BulletInfo.BulletPenetration) + '\n'
-		+ "Damage: " + FString::SanitizeFloat(BulletInfo.BulletDamage));
+		+ "Damage: " + FString::SanitizeFloat(BulletInfo.BulletDamage) +
+		"---------------------------------------\n"),
+		true,
+		true,
+		FLinearColor::Green,
+		ShowBulletInfoTime
+		);
 }
