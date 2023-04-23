@@ -6,6 +6,9 @@
 #include "Components/ActorComponent.h"
 #include "BulletPenetrationComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_SevenParams(FOnHitEvent,FHitResult,Hit,AController*,Instigator,AActor*,Causer,
+	const FVector,HitLocation,const float,Damage,const float,Penetration,const float,Distance); // On Hit Delegate
+
 class UImpactSurfaceInfo;
 class UNiagaraSystem;
 
@@ -58,7 +61,10 @@ private:
 		float ImpulseStrengthMultiplier = 40.0f;
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Damage Info",meta=(ToolTip = "Damage type class", AllowPrivateAccess))
 		TSubclassOf<UDamageType> DamageTypeClass = nullptr; // Damage type class
-
+	// Delegates
+	UPROPERTY(BlueprintAssignable,Category="Bullet Penetration Component|Penetration")
+		FOnHitEvent HitDamageEvent;
+	
 	// Bullet trace type
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Trace Channel",meta=(ToolTip = "Bullet Trace Type (Line,Box,Sphere,Capsule)", AllowPrivateAccess))
 		EBulletTraceType BulletTraceType = EBulletTraceType::Line; // Bullet Trace Type (Line,Box,Sphere,Capsule)

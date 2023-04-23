@@ -171,6 +171,8 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 		DamageInstigator,
 		GetOwner(),
 		DamageTypeClass); // Damage Logic
+	HitDamageEvent.Broadcast(HitResult,DamageInstigator,GetOwner(),HitResult.ImpactPoint,
+		NewBulletInfo.BulletDamage,NewBulletInfo.BulletPenetration,NewBulletInfo.BulletDistance); // Broadcast Hit Event 
 	SpawnVFX(HitResult,NewBulletInfo.BulletPenetration<0);
 	if(NewBulletInfo.BulletPenetration>=0)
 	{
