@@ -95,6 +95,7 @@ bool UBulletPenetrationComponent::PenetrationTrace(const FVector Direction, cons
 	const FVector Start = EnterLocation + LargestActorSide * 2.05f * Direction;
 	const FVector End = EnterLocation;
 	TArray<FHitResult> OutHits;
+	ShowDebugHitSphere(Start,FLinearColor::Yellow); // Debug when start penetrate
 	// Do Penetration Test Trace
 	switch(BulletTraceType)
 	{
@@ -103,7 +104,7 @@ bool UBulletPenetrationComponent::PenetrationTrace(const FVector Direction, cons
 			GetWorld(),
 			Start,
 			End,
-			UEngineTypes::ConvertToTraceType(BulletShootChannel),
+			UEngineTypes::ConvertToTraceType(PenetrationShootChannel),
 			true,
 			IgnoreActors,
 			bShowVisualDebug ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None,
@@ -119,7 +120,7 @@ bool UBulletPenetrationComponent::PenetrationTrace(const FVector Direction, cons
 			Start,
 			End,
 			BulletRadius,
-			UEngineTypes::ConvertToTraceType(BulletShootChannel),
+			UEngineTypes::ConvertToTraceType(PenetrationShootChannel),
 			true,
 			IgnoreActors,
 			bShowVisualDebug ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None,
@@ -134,20 +135,23 @@ bool UBulletPenetrationComponent::PenetrationTrace(const FVector Direction, cons
 		return false;
 	}
 	if(OutHits.IsEmpty()) return false;
-	for(int i = OutHits.Num()-1; i<0;--i)
+	for(int i = OutHits.Num()-1; i>=0;--i)
 	{
 		const FHitResult LocalHit = OutHits[i];
 		if(LocalHit.GetActor() != HitActor) continue;
 		const float PenetrationDistance = UKismetMathLibrary::Vector_Distance(LocalHit.ImpactPoint,EnterLocation); // Get Penetration Distance
 		if(!IsCanPenetraceDistance(PenetrationDistance,LocalHit.PhysMaterial)) return false;
-		auto LocalImpactInfo = ImpactInfo->ImpactInfo[UGameplayStatics::GetSurfaceType(LocalHit)]; // Get ImpactInfo
-		SpawnDecal(LocalHit,LocalImpactInfo.ImpactDecal);
+		if(ImpactInfo)
+		{
+			auto LocalImpactInfo = ImpactInfo->ImpactInfo[UGameplayStatics::GetSurfaceType(LocalHit)]; // Get ImpactInfo
+			SpawnDecal(LocalHit,LocalImpactInfo.ImpactDecal);
+		}
 		/*
 		Penetrate location move on 4 units from start to stop hit bags
 		If Bullet trace == Sphere - add move on Radius + 4 units
 		*/
-		PenetrationLocation = LocalHit.ImpactPoint + LocalHit.ImpactNormal*4.0f +
-		(BulletTraceType == EBulletTraceType::Sphere ? 0.0f : BulletRadius);
+		PenetrationLocation = LocalHit.ImpactPoint + Direction * 4.0f +
+		Direction * (BulletTraceType == EBulletTraceType::Sphere ? BulletRadius : 0.0f);
 		return true;
 	}
 	return false;
