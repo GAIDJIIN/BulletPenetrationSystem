@@ -15,6 +15,9 @@ class UNiagaraSystem;
 // Use struct instead of object
 struct FCurrentBulletInfo
 {
+	FCurrentBulletInfo(){}
+	FCurrentBulletInfo(const float NewBulletPenetration, const float NewBulletDistance, const float NewBulletDamage)
+	: BulletPenetration(NewBulletPenetration),BulletDistance(NewBulletDistance),BulletDamage(NewBulletDamage) {}
 	float BulletPenetration = 0.0f;
 	float BulletDistance = 0.0f;
 	float BulletDamage = 0.0f;

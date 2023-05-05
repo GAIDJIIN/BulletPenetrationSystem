@@ -24,10 +24,7 @@ void UBulletPenetrationComponent::BeginPlay()
 void UBulletPenetrationComponent::Shoot(const FVector ShootLocation, const FVector ShootDirection,
 	TArray<AActor*> IgnoreActors, AController* DamageInstigator)
 {
-	FCurrentBulletInfo LocalBulletInfo;
-	LocalBulletInfo.BulletPenetration = BulletPenetration;
-	LocalBulletInfo.BulletDistance = 0.0f;
-	LocalBulletInfo.BulletDamage = BulletDamage;
+	FCurrentBulletInfo LocalBulletInfo = FCurrentBulletInfo(BulletPenetration,0.0f,BulletDamage);
 	IgnoreActors.AddUnique(GetOwner()); // Ignore weapon
 	HitLogic(ShootLocation,ShootDirection*ShootDistance,LocalBulletInfo,IgnoreActors,DamageInstigator);
 }
@@ -180,6 +177,7 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 	SpawnVFX(HitResult,NewBulletInfo.BulletPenetration<0);
 	if(NewBulletInfo.BulletPenetration>=0)
 	{
+		ShowDebugHitSphere(HitResult.ImpactPoint, FLinearColor::Green); // Debug when hit
 		FVector PenetrationSpawnLocation;
 		const bool Success = PenetrationTrace(
 			ShootDirection,
@@ -196,7 +194,6 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 			IgnoreActors,
 			DamageInstigator
 			); // New bullet shoot distance = StartDistance - ShootDistance
-		ShowDebugHitSphere(HitResult.ImpactPoint, FLinearColor::Green); // Debug when hit
 	}
 	else ShowDebugHitSphere(HitResult.ImpactPoint, FLinearColor::Red); // Debug when last hit
 	MakeImpulseAtImpactLocation(HitResult,NewBulletInfo.BulletDamage*ImpulseStrengthMultiplier); // Make Impulse after detect new penetration location
