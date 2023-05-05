@@ -148,7 +148,7 @@ bool UBulletPenetrationComponent::PenetrationTrace(const FVector Direction, cons
 		If Bullet trace == Sphere - add move on Radius + 4 units
 		*/
 		PenetrationLocation = LocalHit.ImpactPoint + Direction * 4.0f +
-		Direction * (BulletTraceType == EBulletTraceType::Sphere ? BulletRadius : 0.0f);
+		(BulletTraceType == EBulletTraceType::Sphere ? Direction * BulletRadius + LocalHit.ImpactNormal*BulletRadius : FVector::Zero());
 		return true;
 	}
 	return false;

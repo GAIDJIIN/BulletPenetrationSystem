@@ -123,7 +123,8 @@ private:
 	float CalculatePenetrationBySurface(FCurrentBulletInfo& BulletInfo,const TWeakObjectPtr<UPhysicalMaterial> PhysMaterial) const; // Calculate Penetration by Surface
 	void MakeImpulseAtImpactLocation(const FHitResult HitResult, const float ImpulseStrength) const; // Impulse Strength = BulletDamage * ImpulseStrengthMultiplier
 	bool IsCanPenetraceDistance(const float PenetrateDistance, const TWeakObjectPtr<UPhysicalMaterial> PhysMaterial) const; // Check can penetrate distance
-
+	
+	
 	// VFX
 	void SpawnVFX(const FHitResult HitResult, const bool LastHit) const;
 	void SpawnDecal(const FHitResult HitResult, UMaterialInterface* ImpactDecal) const;
