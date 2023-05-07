@@ -70,7 +70,7 @@ private:
 	
 	// Bullet trace type
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Trace Channel",meta=(ToolTip = "Bullet Trace Type (Line,Box,Sphere,Capsule)", AllowPrivateAccess))
-		EBulletTraceType BulletTraceType = EBulletTraceType::Line; // Bullet Trace Type (Line,Box,Sphere,Capsule)
+		EBulletTraceType BulletTraceType = EBulletTraceType::Line; // Bullet Trace Type (Line,Sphere)
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Trace Channel",meta=(ClampMin="0.0",ToolTip = "Sphere or Capsule radius", AllowPrivateAccess, EditCondition = "BulletTraceType == EBulletTraceType::Sphere", EditConditionHides))
 		float BulletRadius = 0.0f;
 	
