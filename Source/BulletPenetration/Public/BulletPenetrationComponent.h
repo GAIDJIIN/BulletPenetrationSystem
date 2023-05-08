@@ -34,7 +34,10 @@ UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class BULLETPENETRATION_API UBulletPenetrationComponent : public UActorComponent
 {
 	GENERATED_BODY()
-
+	/**
+	 Do FHitLogicAsyncTask - friend for this component for they can use HitLogic() function
+	 */
+	friend class FHitLogicAsyncTask;
 public:	
 	UBulletPenetrationComponent();
 	// Blueprint
@@ -48,6 +51,8 @@ private:
 	// Blueprint
 	// Variables
 	// Bullet Info
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Info",meta=(ClampMin="1", ToolTip = "Shooted bullets", AllowPrivateAccess))
+		int32 BulletsToShoot = 1; // Bullet shoot distance
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Penetration Info",meta=(ClampMin="0.0", ToolTip = "Bullet penetration force", AllowPrivateAccess))
 		float BulletPenetration = 1.0f; // Bullet penetration force
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Penetration Info",meta=(ClampMin="0.0", ToolTip = "Max extremum distance penetration", AllowPrivateAccess))
@@ -83,7 +88,9 @@ private:
 		TEnumAsByte<ECollisionChannel> BulletShootChannel = ECC_Visibility; // Bullet Shoot Channel
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Bullet Trace Channel",meta=(ToolTip = "Penetration Shoot Channel", AllowPrivateAccess))
 		TEnumAsByte<ECollisionChannel> PenetrationShootChannel = ECC_Visibility; // Penetration Shoot Channel
-
+	// Async info
+	UPROPERTY(EditAnywhere,Category="Bullet Info|Core Logic",meta=(ToolTip = "Do Async Shoot", AllowPrivateAccess))
+		bool bDoAsyncShoot = false;
 	// Debug
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Debug",meta=(ToolTip = "Show bullet current info", AllowPrivateAccess))
 		bool bShowBulletInfo = false; // Show bullet current info
@@ -93,7 +100,6 @@ private:
 		bool bShowVisualDebug = false; // Show debug traces
 	UPROPERTY(EditAnywhere,Category="Bullet Info|Debug",meta=(ToolTip = "Time to show", AllowPrivateAccess, EditCondition = "bShowVisualDebug"))
 		float ShowVisualDebugTime = 5.0f;
-	
 	// C++
 	// Variables
 	
@@ -116,7 +122,9 @@ private:
 	bool BulletTrace(const FVector ShootLocation, const FVector ShootVector, FHitResult& OutHit, TArray<AActor*> IgnoreActors) const; // Do Bullet Trace
 	bool PenetrationTrace(const FVector Direction, const FVector EnterLocation, AActor* HitActor, TArray<AActor*> IgnoreActors, FVector& PenetrationLocation) const; // Do Penetration Trace
 	void HitLogic(const FVector ShootLocation, const FVector ShootVector, FCurrentBulletInfo& NewBulletInfo, TArray<AActor*> IgnoreActors, AController* DamageInstigator); // Core Hit Logic
-
+	void ShootLogic(const FVector ShootLocation, const FVector ShootVector, TArray<AActor*> IgnoreActors, AController* DamageInstigator); // Shoot logic, spawn all bullets
+	void MakeAsyncOrSynchLogic(const FVector ShootLocation, const FVector ShootVector, TArray<AActor*> IgnoreActors, AController* DamageInstigator);
+	
 	// Service Logic
 	float CalculateDamage(FCurrentBulletInfo& BulletInfo) const; // Calculate Damage by Penetration and Distance
 	float CalculatePenetrationByDistance(FCurrentBulletInfo& BulletInfo) const; // Calculate Penetration by Distance
@@ -130,4 +138,35 @@ private:
 	void SpawnDecal(const FHitResult HitResult, UMaterialInterface* ImpactDecal) const;
 	void SpawnNiagara(const FHitResult HitResult, UNiagaraSystem* ImpactNiagara) const;
 	void SpawnSound(const FHitResult HitResult, USoundBase* ImpactSound) const;
+};
+
+// Async Task
+
+class FHitLogicAsyncTask : public FNonAbandonableTask
+{
+	// Use auto delete async task
+	friend class FAutoDeleteAsyncTask<FHitLogicAsyncTask>;
+	// Needed info for call HitLogic
+	TWeakObjectPtr<UBulletPenetrationComponent> CurrentBulletComponent;
+	const FVector ShootLocation;
+	const FVector ShootVector;
+	TArray<AActor*> IgnoreActors;
+	AController* DamageInstigator;
+
+	// Constructor of async task 
+	FHitLogicAsyncTask(UBulletPenetrationComponent* BulletPenetrationComponent, const FVector NewShootLocation,
+		const FVector NewShootVector, TArray<AActor*> NewIgnoreActors, AController* NewDamageInstigator)
+		: CurrentBulletComponent(BulletPenetrationComponent),ShootLocation(NewShootLocation),ShootVector(NewShootVector),
+	IgnoreActors(NewIgnoreActors),DamageInstigator(NewDamageInstigator){}
+
+	void DoWork()
+	{
+		if(!CurrentBulletComponent.IsValid()) return;
+		CurrentBulletComponent->ShootLogic(ShootLocation,ShootVector,IgnoreActors,DamageInstigator);
+	}
+
+	FORCEINLINE TStatId GetStatId() const
+	{
+		RETURN_QUICK_DECLARE_CYCLE_STAT(FHitLogicAsyncTask, STATGROUP_ThreadPoolAsyncTasks);
+	}
 };

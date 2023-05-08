@@ -19,14 +19,35 @@ void UBulletPenetrationComponent::BeginPlay()
 {
 	Super::BeginPlay();
 }
-
+// Make Async Task
+void UBulletPenetrationComponent::MakeAsyncOrSynchLogic(const FVector ShootLocation,
+	const FVector ShootVector, TArray<AActor*> IgnoreActors,
+	AController* DamageInstigator)
+{
+	// Make New Async Task to start HitLogic if bDoAsyncShoot == true
+	if(bDoAsyncShoot)
+	{
+		TObjectPtr<FAutoDeleteAsyncTask<FHitLogicAsyncTask>> AsyncHitLogic = new FAutoDeleteAsyncTask<FHitLogicAsyncTask>(this,ShootLocation,ShootVector,IgnoreActors,DamageInstigator);
+		AsyncHitLogic->StartBackgroundTask();
+	}
+	else ShootLogic(ShootLocation,ShootVector,IgnoreActors,DamageInstigator);
+}
 // Penetration Logic
+
 void UBulletPenetrationComponent::Shoot(const FVector ShootLocation, const FVector ShootDirection,
 	TArray<AActor*> IgnoreActors, AController* DamageInstigator)
 {
-	FCurrentBulletInfo LocalBulletInfo = FCurrentBulletInfo(BulletPenetration,0.0f,BulletDamage);
-	IgnoreActors.AddUnique(GetOwner()); // Ignore weapon
-	HitLogic(ShootLocation,ShootDirection*ShootDistance,LocalBulletInfo,IgnoreActors,DamageInstigator);
+	MakeAsyncOrSynchLogic(ShootLocation,ShootDirection*ShootDistance,IgnoreActors,DamageInstigator);
+}
+
+void UBulletPenetrationComponent::ShootLogic(const FVector ShootLocation, const FVector ShootVector, TArray<AActor*> IgnoreActors, AController* DamageInstigator)
+{
+	for(int i = 0; i<BulletsToShoot;++i)
+	{
+		FCurrentBulletInfo LocalBulletInfo = FCurrentBulletInfo(BulletPenetration,0.0f,BulletDamage);
+		IgnoreActors.AddUnique(GetOwner()); // Ignore weapon
+		HitLogic(ShootLocation,ShootVector,LocalBulletInfo,IgnoreActors,DamageInstigator); 
+	}
 }
 
 bool UBulletPenetrationComponent::BulletTrace(const FVector ShootLocation, const FVector ShootVector,
@@ -193,7 +214,7 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 			NewBulletInfo,
 			IgnoreActors,
 			DamageInstigator
-			); // New bullet shoot distance = StartDistance - ShootDistance
+			); // New bullet shoot distance = StartDistance - ShootDistance 
 	}
 	else ShowDebugHitSphere(HitResult.ImpactPoint, FLinearColor::Red); // Debug when last hit
 	MakeImpulseAtImpactLocation(HitResult,NewBulletInfo.BulletDamage*ImpulseStrengthMultiplier); // Make Impulse after detect new penetration location
