@@ -19,7 +19,8 @@ void UBulletPenetrationComponent::BeginPlay()
 {
 	Super::BeginPlay();
 }
-// Make Async Task
+
+// Make Async or Synch Task
 void UBulletPenetrationComponent::MakeAsyncOrSynchLogic(const FVector ShootLocation,
 	const FVector ShootVector, TArray<AActor*> IgnoreActors,
 	AController* DamageInstigator)
@@ -27,11 +28,13 @@ void UBulletPenetrationComponent::MakeAsyncOrSynchLogic(const FVector ShootLocat
 	// Make New Async Task to start HitLogic if bDoAsyncShoot == true
 	if(bDoAsyncShoot)
 	{
-		TObjectPtr<FAutoDeleteAsyncTask<FHitLogicAsyncTask>> AsyncHitLogic = new FAutoDeleteAsyncTask<FHitLogicAsyncTask>(this,ShootLocation,ShootVector,IgnoreActors,DamageInstigator);
+		TObjectPtr<FAutoDeleteAsyncTask<FHitLogicAsyncTask>> AsyncHitLogic =
+			new FAutoDeleteAsyncTask<FHitLogicAsyncTask>(this,ShootLocation,ShootVector,IgnoreActors,DamageInstigator);
 		AsyncHitLogic->StartBackgroundTask();
 	}
 	else ShootLogic(ShootLocation,ShootVector,IgnoreActors,DamageInstigator);
 }
+
 // Penetration Logic
 
 void UBulletPenetrationComponent::Shoot(const FVector ShootLocation, const FVector ShootDirection,
@@ -40,7 +43,8 @@ void UBulletPenetrationComponent::Shoot(const FVector ShootLocation, const FVect
 	MakeAsyncOrSynchLogic(ShootLocation,ShootDirection*ShootDistance,IgnoreActors,DamageInstigator);
 }
 
-void UBulletPenetrationComponent::ShootLogic(const FVector ShootLocation, const FVector ShootVector, TArray<AActor*> IgnoreActors, AController* DamageInstigator)
+void UBulletPenetrationComponent::ShootLogic(const FVector ShootLocation, const FVector ShootVector, TArray<AActor*> IgnoreActors,
+	AController* DamageInstigator)
 {
 	for(int i = 0; i<BulletsToShoot;++i)
 	{
@@ -198,7 +202,6 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 	SpawnVFX(HitResult,NewBulletInfo.BulletPenetration<0);
 	if(NewBulletInfo.BulletPenetration>=0)
 	{
-		ShowDebugHitSphere(HitResult.ImpactPoint, FLinearColor::Green); // Debug when hit
 		FVector PenetrationSpawnLocation;
 		const bool Success = PenetrationTrace(
 			ShootDirection,
@@ -207,7 +210,12 @@ void UBulletPenetrationComponent::HitLogic(const FVector ShootLocation, const FV
 			IgnoreActors,
 			PenetrationSpawnLocation);
 		const float NewShootDistance = ShootDistance-NewBulletInfo.BulletDistance;
-		if(!(NewShootDistance>0.0f && Success)) return;
+		if(!(NewShootDistance>0.0f && Success))
+		{
+			ShowDebugHitSphere(HitResult.ImpactPoint, FLinearColor::Red); // Debug when last hit
+			return;
+		}
+		ShowDebugHitSphere(HitResult.ImpactPoint, FLinearColor::Green); // Debug when hit
 		HitLogic(
 			PenetrationSpawnLocation,
 			ShootDirection * NewShootDistance,
