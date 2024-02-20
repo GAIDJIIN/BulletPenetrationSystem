@@ -72,7 +72,7 @@ Plugins/*/Intermediate/*
 
 #
 .idea
-*/Config/**
+Config/**
 
 # Cache files for the editor to use
 DerivedDataCache/*
