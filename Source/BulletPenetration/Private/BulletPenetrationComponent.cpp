@@ -166,7 +166,7 @@ bool UBulletPenetrationComponent::PenetrationTrace(const FVector Direction, cons
 		if(ImpactInfo)
 		{
 			auto LocalImpactInfo = ImpactInfo->ImpactInfo[UGameplayStatics::GetSurfaceType(LocalHit)]; // Get ImpactInfo
-			SpawnDecal(LocalHit,LocalImpactInfo.ImpactDecal);
+			SpawnDecal(LocalHit,LocalImpactInfo.ImpactDecal.Get());
 		}
 		/*
 		Penetrate location move on 4 units from start to stop hit bags
@@ -289,9 +289,9 @@ void UBulletPenetrationComponent::SpawnVFX(const FHitResult HitResult, const boo
 		return;
 	}
 	auto LocalImpactInfo = ImpactInfo->ImpactInfo[UGameplayStatics::GetSurfaceType(HitResult)]; // If last hit return all last VFX
-	SpawnDecal(HitResult,LastHit ? LocalImpactInfo.ImpactLastDecal : LocalImpactInfo.ImpactDecal);
-	SpawnNiagara(HitResult, LastHit ? LocalImpactInfo.ImpactLastNiagara : LocalImpactInfo.ImpactNiagara);
-	SpawnSound(HitResult, LastHit ? LocalImpactInfo.ImpactLastSound : LocalImpactInfo.ImpactSound);
+	SpawnDecal(HitResult,LastHit ? LocalImpactInfo.ImpactLastDecal.Get() : LocalImpactInfo.ImpactDecal.Get());
+	SpawnNiagara(HitResult, LastHit ? LocalImpactInfo.ImpactLastNiagara.Get() : LocalImpactInfo.ImpactNiagara.Get());
+	SpawnSound(HitResult, LastHit ? LocalImpactInfo.ImpactLastSound.Get() : LocalImpactInfo.ImpactSound.Get());
 }
 
 void UBulletPenetrationComponent::SpawnDecal(const FHitResult HitResult, UMaterialInterface* ImpactDecal) const

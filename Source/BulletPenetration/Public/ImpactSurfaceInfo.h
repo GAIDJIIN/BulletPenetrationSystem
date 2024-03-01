@@ -13,17 +13,17 @@ struct FImpactVFX
 {
 	GENERATED_USTRUCT_BODY()
 	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
-		TObjectPtr<UMaterialInterface> ImpactDecal;
+		TSoftObjectPtr<UMaterialInterface> ImpactDecal;
 	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
-		TObjectPtr<UMaterialInterface> ImpactLastDecal;
+		TSoftObjectPtr<UMaterialInterface> ImpactLastDecal;
 	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
-		TObjectPtr<UNiagaraSystem> ImpactNiagara;
+		TSoftObjectPtr<UNiagaraSystem> ImpactNiagara;
 	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
-		TObjectPtr<UNiagaraSystem> ImpactLastNiagara;
+		TSoftObjectPtr<UNiagaraSystem> ImpactLastNiagara;
 	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
-		TObjectPtr<USoundBase> ImpactSound;
+		TSoftObjectPtr<USoundBase> ImpactSound;
 	UPROPERTY(EditAnywhere, Category="Impact Info|VFX")
-		TObjectPtr<USoundBase> ImpactLastSound;
+		TSoftObjectPtr<USoundBase> ImpactLastSound;
 };
 
 UCLASS()
